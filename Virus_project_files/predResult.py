@@ -62,7 +62,7 @@ test_10000 = []
 test_genome = []
 
 
-file = open(''+query+'','r')
+#file = open(query,'r')
 query_name = []
 #sequences = parse_fasta(query)
 
@@ -133,10 +133,11 @@ for ll in range(len(lengths)):
     # Now, filter out sequences that are too short to calculate k-mers
     filtered_sub_query = [entry for entry in flat_sub_query if ' ' in entry and len(entry.split(' ')) >= 2]
 
-
-    for sub in filtered_sub_query:
-        identifier, sequence = sub.split(' ', 1)
-        data = queryKmer(sub,kmer)
+    for identifier, seq in zip(filtered_sub_query, filtered_sub_query[1:]):
+        if 'AT' in seq:
+            data = queryKmer(identifier, seq, kmer)
+        else:
+            continue
 
         #get query sequence fearture
         X_test = np.array(data.iloc[:,1:])
