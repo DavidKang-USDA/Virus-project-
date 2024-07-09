@@ -133,28 +133,31 @@ for ll in range(len(lengths)):
     # Now, filter out sequences that are too short to calculate k-mers
     filtered_sub_query = [entry for entry in flat_sub_query if ' ' in entry and len(entry.split(' ')) >= 2]
 
+    X_test = np.empty(256)
     for identifier, seq in zip(filtered_sub_query, filtered_sub_query[1:]):
-        if 'AT' in seq:
+        if 'ATG' in seq:
             data = queryKmer(identifier, seq, kmer)
         else:
             continue
 
         #get query sequence fearture
-        X_test = np.array(data.iloc[:,1:])
-        y_pred = np.array(model.predict(X_test))
-        predict_prob_y = np.array(model.predict_proba(X_test)[:,1])
-        pred_data = pd.DataFrame(data.iloc[:,0])
-        pred_data.index = data.iloc[:,0]
-        pred_data.drop([0],axis=1, inplace=True)
-        pred_data['Model'] = piece[ll]
-        pred_data['Label'] = y_pred
-        pred_data['Probability'] = predict_prob_y
+        X_test = np.vstack([X_test,np.array(data.iloc[:,1:])])
 
-        if isFirst:
-            isFirst = False
-            pred_result = pred_data
-        else:#append predict result
-            pred_result = pred_result._append(pred_data)
+    print(X_test.shape)
+    y_pred = np.array(model.predict(X_test))
+    predict_prob_y = np.array(model.predict_proba(X_test)[:,1])
+    pred_data = pd.DataFrame(data.iloc[:,0])
+    pred_data.index = data.iloc[:,0]
+    pred_data.drop(columns= 0,axis=1, inplace=True)
+    pred_data['Model'] = piece[ll]
+    pred_data['Label'] = y_pred
+    pred_data['Probability'] = predict_prob_y
+
+    if isFirst:
+        isFirst = False
+        pred_result = pred_data
+    else:#append predict result
+        pred_result = pred_result._append(pred_data)
 
     #clear useless variable, Free memory
     print("Data shape:", X_test.shape)
