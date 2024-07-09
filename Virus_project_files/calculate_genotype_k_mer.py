@@ -34,30 +34,33 @@ def ComputeKmerVector(seq, kmer_size, kmer_count):
     kmer_vector = [float(kmer_count[kmer]) / total_possible_kmers for kmer in kmer_count]
     return kmer_vector
 
-def queryKmer(names, kmer):
+def queryKmer(identifier, names, kmerlen):
     from collections import OrderedDict
     import itertools
     import pandas as pd
 
-    # Initialize Kmer dictionary
-    KmerCount = OrderedDict((''.join(kmer), 0) for kmer in itertools.product('ACGT', repeat=kmer))
+    # Initialize Kmer dictionary (Sharing a name with a pass in variable in a for loop makes this a bit harder to read. I would recommend renaming the pass in variable kmerlen)
+    KmerCount = OrderedDict((''.join(kmer), 0) for kmer in itertools.product('ACGT', repeat=kmerlen))
 
     total_lst = []  # This will hold all rows for the DataFrame
 
+    names = names.split()
+    print(names)
     for line in names:
-        parts = line.strip().split(' ', 1)  # Split the line into parts
-        if len(parts) < 2:  # Check if the line has at least two parts
-            print(f"Skipping incomplete line: {line}")
+        #Bug is ight here. names is a single string as passed in. Thus line is actually a character and will always have length 1. Thus you always skip this loop
+    # Split the line into parts
+        if len(line) < 2:  # Check if the line has at least two parts
+            #print(f"Skipping incomplete line: {line}")
             continue  # Skip this line and go to the next iteration
 
-        identifier, seq = parts  # Unpack the parts into identifier and sequence
-        seq = seq.upper()  # Convert sequence to uppercase
+        seq = line  # Unpack the parts into identifier and sequence
+        seq.upper()  # Convert sequence to uppercase
 
         # Reset KmerCount to zero
         KmerCount = OrderedDict.fromkeys(KmerCount, 0)
 
         # Compute the k-mer vector
-        kmer_vector = ComputeKmerVector(seq, kmer, KmerCount)
+        kmer_vector = ComputeKmerVector(seq, kmerlen, KmerCount)
         if kmer_vector is None:  # Check if the k-mer vector computation was successful
             print(f"Unable to compute k-mer vector for the sequence: {seq}")
             continue
