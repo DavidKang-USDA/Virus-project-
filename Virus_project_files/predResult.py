@@ -146,12 +146,14 @@ for ll in range(len(lengths)):
     print(X_test.shape)
     y_pred = np.array(model.predict(X_test))
     predict_prob_y = np.array(model.predict_proba(X_test)[:,1])
-    pred_data = pd.DataFrame(data.iloc[:,0])
-    pred_data.index = data.iloc[:,0]
-    pred_data.drop(columns= 0,axis=1, inplace=True)
-    pred_data['Model'] = piece[ll]
-    pred_data['Label'] = y_pred
-    pred_data['Probability'] = predict_prob_y
+    pred_data = pd.DataFrame(
+        {
+        'Model' : piece[ll],
+        'Label' : y_pred,
+        'Probability' : predict_prob_y
+        }, 
+        index = [data.iloc[:,0].values[0] for i in range(len(y_pred))]
+    )
 
     if isFirst:
         isFirst = False
@@ -174,7 +176,7 @@ for ll in range(len(lengths)):
     del data, X_test
     
 #print the predict result
-result = result.join(pred_result)
+result = result.join(pred_result, how='outer')
 result.drop("name",axis=1, inplace=True)
 result.index.name = 'Name'
 result.to_csv(''+output+'',sep = '\t',header = True,index = True)
