@@ -103,6 +103,7 @@ for ll in range(len(lengths)):
     data = pd.read_csv('./'+infile+'/'+piece[ll]+'_'+str(kmer)+'_mer',sep = '\t',header = None,index_col = False)
     X = data.iloc[:,1:(data.shape[1] - 1)]#get fearture
     y = data.iloc[:,data.shape[1] - 1]#get label
+    #print(X)
     del data
     X_train = np.array(X)
     y_train = np.array(y)
@@ -133,7 +134,8 @@ for ll in range(len(lengths)):
     # Now, filter out sequences that are too short to calculate k-mers
     filtered_sub_query = [entry for entry in flat_sub_query if ' ' in entry and len(entry.split(' ')) >= 2]
 
-    X_test = np.empty(256)
+    # X_test = np.empty(256) # original
+    X_test = 0
     for identifier, seq in zip(filtered_sub_query, filtered_sub_query[1:]):
         if 'ATG' in seq:
             data = queryKmer(identifier, seq, kmer)
@@ -141,9 +143,13 @@ for ll in range(len(lengths)):
             continue
 
         #get query sequence fearture
-        X_test = np.vstack([X_test,np.array(data.iloc[:,1:])])
+        # X_test = np.vstack([X_test,np.array(data.iloc[:,1:])]) # original
+        if type(X_test) == int:
+            X_test = np.array(data.iloc[:,1:])
+        else:
+            X_test = np.vstack([X_test,np.array(data.iloc[:,1:])])
 
-    print(X_test.shape)
+    #print(X_test.shape)
     y_pred = np.array(model.predict(X_test))
     predict_prob_y = np.array(model.predict_proba(X_test)[:,1])
     pred_data = pd.DataFrame(

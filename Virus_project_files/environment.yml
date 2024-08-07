@@ -1,0 +1,46 @@
+name: virusProject
+channels:
+- pkgs/main
+dependencies:
+- _libgcc_mutex=0.1
+- _openmp_mutex=5.1
+- blas=1.0
+- bottleneck=1.3.7
+- bzip2=1.0.8
+- ca-certificates=2024.7.2
+- expat=2.6.2
+- joblib=1.4.2
+- ld_impl_linux-64=2.38
+- libffi=3.4.4
+- libgcc-ng=11.2.0
+- libgfortran-ng=11.2.0
+- libgfortran5=11.2.0
+- libgomp=11.2.0
+- libopenblas=0.3.21
+- libstdcxx-ng=11.2.0
+- libuuid=1.41.5
+- ncurses=6.4
+- numexpr=2.8.7
+- numpy=1.26.4
+- numpy-base=1.26.4
+- openssl=3.0.14
+- pandas=2.2.2
+- pip=24.0
+- pybind11-abi=5
+- python=3.12.4
+- python-dateutil=2.9.0post0
+- python-tzdata=2023.3
+- pytz=2024.1
+- readline=8.2
+- scikit-learn=1.4.2
+- scipy=1.13.1
+- setuptools=69.5.1
+- six=1.16.0
+- sqlite=3.45.3
+- threadpoolctl=3.5.0
+- tk=8.6.14
+- tzdata=2024a
+- wheel=0.43.0
+- xz=5.4.6
+- zlib=1.2.13
+
