@@ -71,8 +71,7 @@ Usage
 -----------
 ### example command
 
-	python predResult.py --query "..\infile\test_in" --output predict_result --file mod_data --kmer 4 --kjob 1 --bjob 1
-
+	python predResult.py --query "./infile/test_file" --output predict_result --file mod_data --kmer 4 --kjob 1 --bjob 1
 
 Arguments
 -----------
