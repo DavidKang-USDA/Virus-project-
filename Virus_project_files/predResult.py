@@ -69,9 +69,10 @@ query_name = []
 name = ""  # Default or initial value for 'name'
 file = open(query, 'r')
 for line in file:
-    line = line.strip('\n')
-    if line.startswith('NC'):  # Condition to check and set 'name'
+    line = line.strip(' ')
+    if line.startswith('>'):  # Condition to check and set 'name'
         name = line
+        #print(name)
         continue
     if len(line) < 1000:
         test_500.append(name+' '+line)
@@ -98,15 +99,16 @@ isFirst = True
 for ll in range(len(lengths)):
     if lengths[ll] == []:
         continue
-
+    #print(lengths)
 ########################################
     data = pd.read_csv('./'+infile+'/'+piece[ll]+'_'+str(kmer)+'_mer',sep = '\t',header = None,index_col = False)
     X = data.iloc[:,1:(data.shape[1] - 1)]#get fearture
     y = data.iloc[:,data.shape[1] - 1]#get label
-    #print(X)
+    #print(y)
     del data
     X_train = np.array(X)
     y_train = np.array(y)
+    print(len(X_train))
     del X,y#clear useless variable, Free memory
     
     #Base Estimater
@@ -125,60 +127,64 @@ for ll in range(len(lengths)):
 
     #In order to reduce memory usage, we only calculate 1000 sequences at a time.
     step = 1000
+    #print(lengths[ll])
     sub_query = [lengths[ll][i:i + step] for i in range(0, len(lengths[ll]), step)]
+    #print(sub_query)
     # Filter out sequences that are too short before processing
     # Ensure sub_query is defined and populated correctly first
     # sub_query = [' '.join(s.split(' ')[0:2]) for s in sub_query for sub in s if len(sub.split(' ')[1]) >= kmer]
-    flat_sub_query = [item for sublist in sub_query for item in sublist]
+    #flat_sub_query = [item for sublist in sub_query for item in sublist]
 
     # Now, filter out sequences that are too short to calculate k-mers
-    filtered_sub_query = [entry for entry in flat_sub_query if ' ' in entry and len(entry.split(' ')) >= 2]
-
+    #filtered_sub_query = [entry for entry in flat_sub_query if ' ' in entry and len(entry.split(' ')) >= 2]
+    #print(sub_query)
     # X_test = np.empty(256) # original
+     #In order to reduce memory usage, we only calculate 1000 sequences at a time.
+    #step = 1000
+    #sub_query = [lengths[ll][i:i+step] for i in range(0,len(lengths[ll]),step)]
+    #for sub in sub_query:
+        #data = queryKmer(sub,kmer)
     X_test = 0
-    for identifier, seq in zip(filtered_sub_query, filtered_sub_query[1:]):
-        if 'ATG' in seq:
-            data = queryKmer(identifier, seq, kmer)
-        else:
-            continue
-
+    for sub in sub_query:
+        #print(sub)
+        data = queryKmer(sub, kmer) 
         #get query sequence fearture
-        # X_test = np.vstack([X_test,np.array(data.iloc[:,1:])]) # original
-        if type(X_test) == int:
-            X_test = np.array(data.iloc[:,1:])
-        else:
-            X_test = np.vstack([X_test,np.array(data.iloc[:,1:])])
+        #X_test = np.vstack([X_test,np.array(data.iloc[:,1:])]) # origina
+        X_test = np.array(data.iloc[:,1:])
+        #print(X_test)
+        #print(X_test.shape)
+        y_pred = np.array(model.predict(X_test))
+        #print(len(y_pred))
+        predict_prob_y = np.array(model.predict_proba(X_test)[:,1])
+        pred_data = pd.DataFrame(
+            {
+            'Model' : piece[ll],
+            'Label' : y_pred,
+            'Probability' : predict_prob_y
+            }
+            
+        )
+        pred_data.index = data.iloc[:,0]
+        #print(pred_data.index)
+        if isFirst:
+            isFirst = False
+            pred_result = pred_data
+        else:#append predict result
+            pred_result = pred_result._append(pred_data)
 
-    #print(X_test.shape)
-    y_pred = np.array(model.predict(X_test))
-    predict_prob_y = np.array(model.predict_proba(X_test)[:,1])
-    pred_data = pd.DataFrame(
-        {
-        'Model' : piece[ll],
-        'Label' : y_pred,
-        'Probability' : predict_prob_y
-        }, 
-        index = [data.iloc[:,0].values[0] for i in range(len(y_pred))]
-    )
+        #clear useless variable, Free memory
+        #del data, X_test
+        print("Data shape:", X_test.shape)
+        y_pred = model.predict(X_test)
+        predict_prob_y = model.predict_proba(X_test)[:, 1]  # assuming binary classification
 
-    if isFirst:
-        isFirst = False
-        pred_result = pred_data
-    else:#append predict result
-        pred_result = pred_result._append(pred_data)
+        print("Sample predictions:", y_pred[:5])
+        print("Sample probabilities:", predict_prob_y[:5])
 
-    #clear useless variable, Free memory
-    print("Data shape:", X_test.shape)
-    y_pred = model.predict(X_test)
-    predict_prob_y = model.predict_proba(X_test)[:, 1]  # assuming binary classification
-
-    print("Sample predictions:", y_pred[:5])
-    print("Sample probabilities:", predict_prob_y[:5])
-
-    # Ensure DataFrame is being updated
-    pred_data['Label'] = y_pred
-    pred_data['Probability'] = predict_prob_y
-    print("Preview of prediction DataFrame:", pred_data.head())
+        # Ensure DataFrame is being updated
+        pred_data['Label'] = y_pred
+        pred_data['Probability'] = predict_prob_y
+        #print("Preview of prediction DataFrame:", pred_data.head())
     del data, X_test
     
 #print the predict result

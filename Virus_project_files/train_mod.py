@@ -99,8 +99,8 @@ save_data_to_file(test_oth_files, './infile/test_oth')
 
 #In order to reduce memory usage, we only calculate 1000 sequences at a time.
 step = 1000
-sub_infiles = [in_files[i:i+step] for i in range(0, len(in_files), step)]
-sub_othfiles = [oth_files[i:i+step] for i in range(0, len(oth_files), step)]
+sub_infiles = [bootstrapped_train_in_files[i:i+step] for i in range(0, len(bootstrapped_train_in_files), step)]
+sub_othfiles = [bootstrapped_train_oth_files[i:i+step] for i in range(0, len(bootstrapped_train_oth_files), step)]
 
 
 
