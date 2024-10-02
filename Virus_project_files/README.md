@@ -87,4 +87,16 @@ Arguments
 
 --bjob  The number of parallel jobs to run BalancedBaggingClassifier.
 
+Description
+-----------
+The function identifies human-infecting virus contig in the input file using the model trained based on the viral genomes.
 
+The rows correspond to sequences, and the columns are from the left to the right, sequence name (Name), using model (Model), prediction result (Label) and prediction probability (Probability).
+
+1- When the prediction result is "1" and prediction probability is close to 1, it means the model predicts this query sequence more likely to infect (in virus).
+
+2- When the prediction result is "0" and prediction probability is close to 0, it means the model predicts this query sequence more likely to infect (oth virus).
+
+For a query sequence of length L: if L<1kb, the model trained by 500bp sequences is used to predict; if 1kb<=L<3kb, the model trained by 1000bp sequences is used to predict; if 3kb<=L<5kb, the model trained by 3000bp sequences is used to predict; if 5kb<=L<10kb, the model trained by 5000bp sequences is used by predict; if 10kb<=L<15kb, the model trained by 10000bp sequences is used to predict; if L>=15kb, the model trained by the viral genome is used to predict.
+
+The different between kjob and bjob: bjob will faster the kjob, but it will take more memory when using same processors.
