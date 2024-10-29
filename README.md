@@ -1,5 +1,8 @@
-# VirusProjectFiles 
-Base on python 3
+This repository provides supporting information and the codes for the following project<br />
+ <br />
+
+## Create a machine learning tool to predict virus cross-infection risk in plants and insects.
+
 
 Dependencies
 -----------
@@ -89,7 +92,7 @@ Arguments
 
 Description
 -----------
-The function identifies human-infecting virus contig in the input file using the model trained based on the viral genomes.
+The function identifies host-infecting virus contig in the input file using the model trained based on the viral genomes.
 
 The rows correspond to sequences, and the columns are from the left to the right, sequence name (Name), using model (Model), prediction result (Label) and prediction probability (Probability).
 
