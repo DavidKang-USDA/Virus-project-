@@ -1,23 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Tue Jun 25 20:13:34 2019
 
-@author: FinalZ
-"""
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Jun 25 20:13:34 2019
-
-@author: FinalZ
-"""
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Jun 25 20:13:34 2019
-@author: FinalZ
-"""
 
 from calculate_genotype_k_mer import queryKmer
 import pandas as pd
