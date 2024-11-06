@@ -1,18 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Wed Jun 26 17:51:29 2019
 
-@author: FinalZ
-"""
-
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Sun Apr 28 15:35:59 2019
-
-@author: FinalZ
-"""
 
 from calculate_genotype_k_mer import Config_ComputeKmer,Genome_ComputeKmer
 import getopt,sys,os
