@@ -13,7 +13,8 @@ Created on Thu May 11 21:03:07 2017
 
 @author: zhang
 """
-def ComputeKmerVector(sequence,k,KmerCount):
+
+def ComputeKmerVector(sequence, k, KmerCount, return_pr = True):
     from  collections import OrderedDict
     n = len(sequence)
     for j in range(0,n-k+1):
@@ -25,11 +26,14 @@ def ComputeKmerVector(sequence,k,KmerCount):
 
     KmerVec = OrderedDict()
     for m in KmerCount:
-        KmerVec[m] = float(KmerCount[m])/float(n-k+1)
+        if return_pr: # normalize to probabilities or retain as counts?
+            KmerVec[m] = float(KmerCount[m])/float(n-k+1)
+        else:
+            KmerVec[m] = KmerCount[m]
     Vec = list(KmerVec.values())
     return Vec
 
-def queryKmer(name,kmer):
+def queryKmer(name, kmer, return_pr = True):
     from  collections import OrderedDict
     import itertools
     import pandas as pd
@@ -54,7 +58,7 @@ def queryKmer(name,kmer):
         #print(tt[1].upper())
         Seq = tt[1].upper()
         KmerCount = OrderedDict(zip(KmerCount.keys(),zero))
-        temp = "        ".join(map(str,ComputeKmerVector(Seq,kmer,KmerCount)))
+        temp = "        ".join(map(str,ComputeKmerVector(Seq,kmer,KmerCount,return_pr = return_pr)))
         temp = tt[0]+'      '+temp
         #
         #print(temp)
@@ -65,7 +69,7 @@ def queryKmer(name,kmer):
     return ID_VEC_LABEL
 
 
-def Config_ComputeKmer(in_files, kmer, p, label):
+def Config_ComputeKmer(in_files, kmer, p, label, return_pr = True):
     from collections import OrderedDict
     import itertools, re
     import pandas as pd
@@ -89,7 +93,7 @@ def Config_ComputeKmer(in_files, kmer, p, label):
             KmerCount = OrderedDict.fromkeys(KmerCount, 0)
 
             # Compute the kmer vector for the sequence piece
-            kmer_vector = ComputeKmerVector(piece_seq, kmer, KmerCount)
+            kmer_vector = ComputeKmerVector(piece_seq, kmer, KmerCount, return_pr = return_pr)
 
             # Create a list entry combining header, kmer counts and label
             entry = [header + '_' + str(count)] + kmer_vector + [label]
@@ -108,7 +112,7 @@ def Config_ComputeKmer(in_files, kmer, p, label):
 
 
 
-def Genome_ComputeKmer(in_files, kmer, label):
+def Genome_ComputeKmer(in_files, kmer, label, return_pr = True):
     from collections import OrderedDict
     import itertools
     import pandas as pd
@@ -125,7 +129,7 @@ def Genome_ComputeKmer(in_files, kmer, label):
         KmerCount = OrderedDict.fromkeys(KmerCount, 0)
         
         # Compute the kmer vector for the sequence
-        kmer_vector = ComputeKmerVector(Seq, kmer, KmerCount)
+        kmer_vector = ComputeKmerVector(Seq, kmer, KmerCount, return_pr = return_pr)
         # Create a list entry combining header, kmer counts and label
         entry = [header] + kmer_vector + [label]
         
