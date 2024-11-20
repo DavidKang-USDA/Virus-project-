@@ -9,3 +9,6 @@ mv Drosophila_melanogaster  Glycine_max  Spodoptera_frugiperda  Vitis_vinifera  
 
 # create directory for processed data
 mkdir data
+mkdir models
+mkdir models/tune
+mkdir models/prod
