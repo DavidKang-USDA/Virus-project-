@@ -50,7 +50,7 @@ def fasta_to_pq(
     if not save_dir[-1] == '/':
         save_dir = save_dir+'/'
 
-    dat = read_fasta(fasta_path)#[0:100] #FIXME testing is on a subset of the records
+    dat = read_fasta(fasta_path)
     for kmer in kmers:
 
         print(f"Processing k-mer {kmer}")
@@ -187,8 +187,7 @@ for fasta_path in fasta_paths:
         fasta_to_pq(
                 fasta_path = fasta_path,
                 Label = species, 
-                kmers = [1, 2], #FIXME after testing set to full range
-                # kmers = [i for i in range(1, 7)], # 1 - 6 # note writing many columns takes a long time. The bulk of run time seems to be writing the 6mer data
+                kmers = [i for i in range(1, 7)], # 1 - 6 # note writing many columns takes a long time. The bulk of run time seems to be writing the 6mer data
                 contig_lengths = [500, 1000, 3000, 5000, 10000],
                 save_dir = "./data",
                 return_pr = False
