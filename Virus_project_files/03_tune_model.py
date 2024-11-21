@@ -6,10 +6,7 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 
 import sklearn
-from   sklearn.neighbors import KNeighborsClassifier
-
 import imblearn
-from   imblearn.ensemble import BalancedBaggingClassifier
 
 from   ax.service.ax_client import AxClient, ObjectiveProperties
 # from ax.utils.notebook.plotting import init_notebook_plotting, render
@@ -91,7 +88,9 @@ if args.k_job:               k_job = args.k_job
 # 2. an evaluation function for Ax. (`evaluate`)
 
 match model_type:
-    case 'knn':        
+    case 'knn':     
+        from sklearn.neighbors import KNeighborsClassifier
+        
         exp_search_space = [
             {
                 "name": "weights",
@@ -104,7 +103,45 @@ match model_type:
             {
                 "name": "k",
                 "type": "range",
-                "bounds": [1, 10],
+                "bounds": [1, 50],
+                "value_type": "int", 
+                "log_scale": False,  
+            }
+        ]
+        # define evaluation function for Ax to use. 
+        # NOTE: this is written following the approach used by _Zhang et al. 2019_ of using a random seed to set up a test/train split.
+        # I (Daniel) think it would be better to use a test/validation/training split and make definition of these _explicit_ even if `train_test_split` is generating these.  
+        def evaluate(
+                y_train, X_train, 
+                y_test,  X_test,
+                parameterization = {'weights': 'uniform', 'k': 6}, 
+                k_job = 10
+                ):
+            model = KNeighborsClassifier(
+                n_neighbors=parameterization['k'],
+                weights = parameterization['weights'], 
+                n_jobs= k_job)
+            
+            model.fit(X_train, y_train)
+            return {'score': ( model.score(X_test, y_test) )}   
+
+    case 'bknn':        
+        from sklearn.neighbors import KNeighborsClassifier
+        from imblearn.ensemble import BalancedBaggingClassifier
+
+        exp_search_space = [
+            {
+                "name": "weights",
+                "type": "choice",
+                "values": ['uniform', 'distance'], 
+                "is_ordered": True,
+                "sort_values": False,
+                "value_type": "str"
+            },
+            {
+                "name": "k",
+                "type": "range",
+                "bounds": [1, 50],
                 "value_type": "int", 
                 "log_scale": False,  
             },
@@ -138,6 +175,244 @@ match model_type:
             model.fit(X_train, y_train)
             return {'score': ( model.score(X_test, y_test) )}
         
+    case 'rnr':
+        from sklearn.neighbors import RadiusNeighborsClassifier
+        exp_search_space = [
+            {
+                "name": "weights",
+                "type": "choice",
+                "values": ['uniform', 'distance'], 
+                "is_ordered": True,
+                "sort_values": False,
+                "value_type": "str"
+            },
+            {
+                "name": "radius",
+                "type": "range",
+                "bounds": [0.01, 50],
+                "value_type": "float", 
+                "log_scale": False,  
+            }
+        ]
+        def evaluate(
+                y_train, X_train, 
+                y_test,  X_test,
+                parameterization, 
+                k_job = 10
+                ):
+            model = RadiusNeighborsClassifier(
+                radius=parameterization['radius'],
+                weights = parameterization['weights'], 
+                n_jobs= k_job)
+            
+            model.fit(X_train, y_train)
+            return {'score': ( model.score(X_test, y_test) )}
+
+    case 'brf':
+        from imblearn.ensemble import BalancedRandomForestClassifier
+        exp_search_space = [
+            {
+                "name": "n_estimators",
+                "type": "range",
+                "bounds": [2, 50],
+                "value_type": "int", 
+                "log_scale": False,  
+            },
+            {
+                "name": "max_depth",
+                "type": "range",
+                "bounds": [1, 10],
+                "value_type": "int", 
+                "log_scale": False,  
+            }
+        ]
+        def evaluate(
+                y_train, X_train, 
+                y_test,  X_test,
+                parameterization, 
+                **kwargs
+                ):
+            model = BalancedRandomForestClassifier(
+                n_estimators=parameterization['n_estimators'], 
+                max_depth = parameterization['max_depth'], 
+                sampling_strategy="all", replacement=True,
+                bootstrap=False
+                )
+            
+            model.fit(X_train, y_train)
+            return {'score': ( model.score(X_test, y_test) )}
+
+    case 'rf':
+        from sklearn.ensemble import RandomForestClassifier
+        exp_search_space = [
+            {
+                "name": "max_depth",
+                "type": "range",
+                "bounds": [1, 50],
+                "value_type": "int", 
+                "log_scale": False,  
+            }
+        ]
+        def evaluate(
+                y_train, X_train, 
+                y_test,  X_test,
+                parameterization, 
+                **kwargs
+                ):
+            model = RandomForestClassifier(
+                max_depth = parameterization['max_depth']
+                )
+            
+            model.fit(X_train, y_train)
+            return {'score': ( model.score(X_test, y_test) )}
+
+    # case 'GNBC': # Gaussian Naive Bayes classifier
+    # no optimization needed
+    #     from sklearn.naive_bayes import GaussianNB
+    #     GaussianNB()
+    #     pass
+
+    case 'svml':
+        from sklearn.svm import SVC
+        exp_search_space = [
+            {
+                "name": "C",
+                "type": "range",
+                "bounds": [0.000001, 2],
+                "value_type": "float", 
+                "log_scale": False,  
+            }
+        ]
+        def evaluate(
+                y_train, X_train, 
+                y_test,  X_test,
+                parameterization, 
+                **kwargs
+                ):
+            model = SVC(
+                kernel="linear", 
+                C = parameterization['C']
+                )
+            
+            model.fit(X_train, y_train)
+            return {'score': ( model.score(X_test, y_test) )}
+        
+    case 'svmr':
+        from sklearn.svm import SVC
+        exp_search_space = [
+            {
+                "name": "C",
+                "type": "range",
+                "bounds": [0.000001, 2],
+                "value_type": "float", 
+                "log_scale": False,  
+            }
+        ]
+        def evaluate(
+                y_train, X_train, 
+                y_test,  X_test,
+                parameterization, 
+                **kwargs
+                ):
+            model = SVC(
+                kernel="rbf", 
+                C = parameterization['C']
+                )
+            
+            model.fit(X_train, y_train)
+            return {'score': ( model.score(X_test, y_test) )}
+
+    case 'lr':
+        from sklearn.linear_model import LogisticRegression
+        exp_search_space = [
+            {
+                "name": "penalty",
+                "type": "choice",
+                "values": ['l1', 'l2', 'elasticnet'], 
+                "is_ordered": True,
+                "sort_values": False,
+                "value_type": "str"
+            },
+            {
+                "name": "C",
+                "type": "range",
+                "bounds": [0.000001, 2],
+                "value_type": "float", 
+                "log_scale": False,  
+            }
+        ]
+        def evaluate(
+                y_train, X_train, 
+                y_test,  X_test,
+                parameterization, 
+                **kwargs
+                ):
+            model = LogisticRegression(
+                penalty=parameterization['penalty'],
+                C = parameterization['C'],
+                solver= 'saga' # allows l1,l2, and elasticnet
+                )
+            
+            model.fit(X_train, y_train)
+            return {'score': ( model.score(X_test, y_test) )}
+        
+    case 'hgb':
+        from sklearn.ensemble import HistGradientBoostingClassifier
+        exp_search_space = [
+            {
+                "name": "learning_rate",
+                "type": "range",
+                "bounds": [0.01, 1],
+                "value_type": "float", 
+                "log_scale": False,  
+            },
+            {
+                "name": "max_iter",
+                "type": "range",
+                "bounds": [50, 100],
+                "value_type": "int", 
+                "log_scale": False,  
+            },
+            {
+                "name": "max_leaf_nodes",
+                "type": "range",
+                "bounds": [10, 50],
+                "value_type": "int", 
+                "log_scale": False,  
+            },
+            {
+                "name": "max_depth",
+                "type": "range",
+                "bounds": [1, 50],
+                "value_type": "int", 
+                "log_scale": False,  
+            },
+            {
+                "name": "max_features",
+                "type": "range",
+                "bounds": [0.1, 1],
+                "value_type": "float", 
+                "log_scale": False,  
+            }
+        ]
+        def evaluate(
+                y_train, X_train, 
+                y_test,  X_test,
+                parameterization, 
+                **kwargs
+                ):
+            model = HistGradientBoostingClassifier(
+                loss = 'log_loss',
+                learning_rate = parameterization['learning_rate'],
+                max_iter = parameterization['max_iter'],
+                max_leaf_nodes = parameterization['max_leaf_nodes'],
+                max_depth = parameterization['max_depth'],
+                max_features = parameterization['max_features']          
+                )
+            
+            model.fit(X_train, y_train)
+            return {'score': ( model.score(X_test, y_test) )}
+
     case _:
         print(f"Model {model_type} is not defined!")
         assert True == False
