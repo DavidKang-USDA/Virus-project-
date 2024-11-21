@@ -96,9 +96,9 @@ tuning_iterations = 20
 # Evaluation options
 k_job = 10
 
+# exp_json = './example.json'
 
 
-exp_json = './example.json'
 # argparse values ----
 parser = argparse.ArgumentParser()
 # Model options
@@ -138,12 +138,29 @@ if args.exp_name_append:  exp_name_append = args.exp_name_append
 # 2. an evaluation function for Ax. (`evaluate`)
 
 match model_type:
-    case 'knn':        
+    case 'knn':     
+        from sklearn.neighbors import KNeighborsClassifier
+        def train_model(
+                y_train, X_train, 
+                parameterization = {'weights': 'uniform', 'k': 6}, 
+                k_job = 10,
+                **kwargs
+                ):
+            model = KNeighborsClassifier(
+                n_neighbors=parameterization['k'],
+                weights = parameterization['weights'], 
+                n_jobs= k_job)
+            
+            model.fit(X_train, y_train)
+            return model   
+        
+    case 'bknn':        
         # slight modification of `evaluate()`
         def train_model(
                 y_train, X_train,
                 parameterization = {'weights': 'uniform', 'k': 6}, 
-                k_job = 10
+                k_job = 10, 
+                **kwargs
                 ):
             knn = KNeighborsClassifier(
                 n_neighbors=parameterization['k'],
@@ -158,6 +175,128 @@ match model_type:
             model.fit(X_train, y_train)
             return model
         
+    case 'rnr':
+        from sklearn.neighbors import RadiusNeighborsClassifier
+        def train_model(
+                y_train, X_train, 
+                parameterization, 
+                k_job = 10
+                ):
+            model = RadiusNeighborsClassifier(
+                radius=parameterization['radius'],
+                weights = parameterization['weights'], 
+                n_jobs= k_job)
+            
+            model.fit(X_train, y_train)
+            return model
+
+    case 'brf':
+        from imblearn.ensemble import BalancedRandomForestClassifier
+        def train_model(
+                y_train, X_train, 
+                parameterization, 
+                **kwargs
+                ):
+            model = BalancedRandomForestClassifier(
+                n_estimators=parameterization['n_estimators'], 
+                max_depth = parameterization['max_depth'], 
+                sampling_strategy="all", replacement=True,
+                bootstrap=False
+                )
+            
+            model.fit(X_train, y_train)
+            return model
+
+    case 'rf':
+        from sklearn.ensemble import RandomForestClassifier
+        def train_model(
+                y_train, X_train, 
+                parameterization, 
+                **kwargs
+                ):
+            model = RandomForestClassifier(
+                max_depth = parameterization['max_depth']
+                )
+            
+            model.fit(X_train, y_train)
+            return model
+
+    case 'GNBC': # Gaussian Naive Bayes classifier
+        from sklearn.naive_bayes import GaussianNB
+        def train_model(
+                y_train, X_train, 
+                **kwargs
+                ):
+            model = GaussianNB()
+            
+            model.fit(X_train, y_train)
+            return model
+
+    case 'svml':
+        from sklearn.svm import SVC
+        def train_model(
+                y_train, X_train, 
+                parameterization, 
+                **kwargs
+                ):
+            model = SVC(
+                kernel="linear", 
+                C = parameterization['C']
+                )
+            
+            model.fit(X_train, y_train)
+            return model
+        
+    case 'svmr':
+        from sklearn.svm import SVC
+        def train_model(
+                y_train, X_train, 
+                parameterization, 
+                **kwargs
+                ):
+            model = SVC(
+                kernel="rbf", 
+                C = parameterization['C']
+                )
+            
+            model.fit(X_train, y_train)
+            return model
+
+    case 'lr':
+        from sklearn.linear_model import LogisticRegression
+        def train_model(
+                y_train, X_train, 
+                parameterization, 
+                **kwargs
+                ):
+            model = LogisticRegression(
+                penalty=parameterization['penalty'],
+                C = parameterization['C'],
+                solver= 'saga' # allows l1,l2, and elasticnet
+                )
+            
+            model.fit(X_train, y_train)
+            return model
+        
+    case 'hgb':
+        from sklearn.ensemble import HistGradientBoostingClassifier
+        def train_model(
+                y_train, X_train, 
+                parameterization, 
+                **kwargs
+                ):
+            model = HistGradientBoostingClassifier(
+                loss = 'log_loss',
+                learning_rate = parameterization['learning_rate'],
+                max_iter = parameterization['max_iter'],
+                max_leaf_nodes = parameterization['max_leaf_nodes'],
+                max_depth = parameterization['max_depth'],
+                max_features = parameterization['max_features']          
+                )
+            
+            model.fit(X_train, y_train)
+            return model
+
     case _:
         print(f"Model {model_type} is not defined!")
         assert True == False
