@@ -127,7 +127,7 @@ def fasta_to_pq(
 
                 else:
                     logit = lambda p: p
-                x = len(sequence)
+                x = len(kmer_list)
                 if x <=0:
                     print(x)
 
