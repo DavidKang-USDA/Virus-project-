@@ -1,0 +1,24 @@
+Bootstrap: docker 
+From: ghcr.io/astral-sh/uv:python3.12-bookworm-slim
+
+%files
+    ./uv.lock /app/uv.lock
+    ./pyproject.toml /app/pyproject.toml
+
+%environment
+
+%post
+    cd /app/
+    # uv add ax-platform joblib scikit-learn imblearn polars pyarrow pandas tqdm matplotlib 
+    # uv add ipykernel
+    # might be better to
+    uv sync --frozen --no-install-project --no-dev
+    
+    # Trying to get automatic launch of uv python venv when calling python in container. 
+    # this works:
+    # singularity exec s.sif /app/.venv/bin/python 
+    # but modifying the path or linking does not seem to work. 
+
+    #export PATH="/app/.venv/bin:$PATH"
+    #ln -s /app/.venv/bin/python /usr/bin/python
+    
