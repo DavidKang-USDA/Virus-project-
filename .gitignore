@@ -1,0 +1,14 @@
+# ignore data and model outputs
+Virus_project_files/ext_data/
+Virus_project_files/data/
+Virus_project_files/models/tune/
+Virus_project_files/models/prod/
+# ignore data intermediates
+*.parquet
+
+# ignore HPC files
+/containers/vp.sif
+*.sbatch
+slurm-*
+
+
