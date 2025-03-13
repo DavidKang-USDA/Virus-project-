@@ -1,0 +1,225 @@
+---
+title: "Preliminary figures"
+format: html
+---
+
+```{r}
+library(arrow)
+library(tidyverse)
+```
+
+## KNN Analysis
+
+```{r}
+M <- arrow::read_parquet('../../Virus_project_files/models/prod/all__metrics.parquet') |> 
+  filter(model == 'knn')
+
+M <- M |>
+  mutate(kmer = str_remove(kmer, 'kmer')) |>
+  mutate(contig = case_when(str_detect(contig, 'bp\\d+') ~str_remove(contig, 'bp'),
+                            contig == 'bpgenome' ~ 'Genome')) |>
+  mutate(contig = factor(contig, levels = c("500", "1000", "3000", "5000", "10000", "Genome"  ))) |>
+  mutate(target = str_replace_all(target, '_', ' '))
+
+M |>
+  ggplot(aes(x = kmer, y = accuracy_tst))+
+  geom_point()+
+  geom_line(aes(group = fold))+
+  facet_grid(target~contig)+
+  labs(x = 'k-mer', y = 'contig length', title = 'Out of Sample Accuracy Across Models')+
+  theme_bw()+theme(strip.text.y = element_text(face = 'italic'))
+
+
+M_mean_acc <- M |> 
+  group_by(model, target, kmer, contig) |>
+  summarise(accuracy_tst = mean(accuracy_tst)) |>
+  ungroup()
+
+tmp <- M_mean_acc |> 
+  group_by(model, target) |> 
+  summarise(accuracy_tst = max(accuracy_tst)) |>
+  mutate(ismax = T) |>
+  ungroup()
+
+    
+M_mean_acc |> 
+  ggplot(aes(x = kmer, y = contig, fill = accuracy_tst))+
+  geom_tile()+
+  geom_text(data = left_join(tmp, M_mean_acc), aes(label = round(accuracy_tst, digits = 3)))+
+  facet_grid(target~.)+
+  scale_fill_viridis_c()+
+  labs(x = 'k-mer', y = 'contig length', fill = 'Mean\nAccuracy', title = 'Mean Out of Sample Accuracy Across Models')+
+  theme_bw()+
+  theme(strip.text.y = element_text(face = 'italic'))
+
+
+M_mean_acc |> 
+  filter(kmer != 1) |>
+  ggplot(aes(x = kmer, y = contig, fill = accuracy_tst))+
+  geom_tile()+
+  facet_grid(target~.)+
+  scale_fill_viridis_c()+
+  labs(x = 'k-mer', y = 'contig length', fill = 'Mean\nAccuracy', title = 'Mean Accuracy Across Models')+
+  theme_bw()+
+  theme(strip.text.y = element_text(face = 'italic'))
+
+```
+
+
+
+```{r}
+
+M <- arrow::read_parquet('../../Virus_project_files/models/prod/all__hyperparameters.parquet') |> 
+  filter(model == 'knn')
+
+M <- M |>
+  mutate(kmer = str_remove(kmer, 'kmer')) |>
+  mutate(contig = case_when(str_detect(contig, 'bp\\d+') ~str_remove(contig, 'bp'),
+                            contig == 'bpgenome' ~ 'Genome')) |>
+  mutate(contig = factor(contig, levels = c("500", "1000", "3000", "5000", "10000", "Genome"  ))) |>
+  mutate(target = str_replace_all(target, '_', ' '))
+
+M |>
+  ggplot(aes(x = kmer, y = score))+
+  geom_point()+
+  geom_line()+
+  facet_grid(target~contig)+
+  labs(x = 'k-mer', y = 'Accuracy', title = 'Peformance With Hyperparameter Optimization')+
+  theme_bw()+
+  theme(strip.text.y = element_text(face = 'italic'))
+
+
+M |>
+  ggplot(aes(x= trial_index, y = kmer, fill = score))+
+  geom_tile()+
+  facet_grid(target~contig)+
+  scale_fill_viridis_c()+
+  labs(x = 'Hyperparameter Iteration', y = 'k-mer', fill = 'Accuracy', title = 'Peformance With Hyperparameter Optimization')+
+  theme_bw()+
+  theme(strip.text.y = element_text(face = 'italic'))
+
+
+M |>
+  ggplot(aes(x= trial_index, y = kmer, fill = score))+
+  geom_tile()+
+  facet_grid(target~contig)+
+  scale_fill_viridis_c()+
+  labs(x = 'Hyperparameter Iteration', y = 'k-mer', fill = 'Accuracy', title = 'Peformance With Hyperparameter Optimization')+
+  theme_bw()+
+  theme(strip.text.y = element_text(face = 'italic'))
+```
+
+## Cross Method Analysis
+
+Constrained to 3-mers and full genome
+
+```{r}
+M <- arrow::read_parquet('../../Virus_project_files/models/prod/all__metrics.parquet') |> 
+  filter(kmer == 'kmer3' & contig  == 'bpgenome') |>
+  filter(!(model %in% c('svml', 'svmr')))
+
+M <- M |>
+  mutate(kmer = str_remove(kmer, 'kmer')) |>
+  mutate(contig = case_when(str_detect(contig, 'bp\\d+') ~str_remove(contig, 'bp'),
+                            contig == 'bpgenome' ~ 'Genome')) |>
+  mutate(contig = factor(contig, levels = c("500", "1000", "3000", "5000", "10000", "Genome"  ))) |>
+  mutate(target = str_replace_all(target, '_', ' ')) |> 
+  mutate(model = str_to_upper(model)) |>
+  mutate(model = factor(model, levels = c("KNN", "BKNN", "RF", "BRF", "GNBC", "HGB")))
+
+
+
+p <- M |> 
+  select(model, target, fold, accuracy_trn, accuracy_tst) |>
+  pivot_longer(cols = c(accuracy_trn, accuracy_tst)) |>
+  rename(Split = name, acc = value) |>
+  mutate(Split = case_when(
+    Split == 'accuracy_trn' ~ 'Train',
+    Split == 'accuracy_tst' ~ 'Test'
+  )) |> 
+  mutate(Split = factor(Split, levels = c('Train', 'Test'))) |>
+  ggplot(aes(x = model, y = acc, fill = Split, color = Split))+
+  geom_boxplot(position = position_dodge(width = 1.5), width= 0.5, color = 'black')+
+  geom_point(  position = position_dodge(width = 0.5), size = 2  )+
+  geom_point(  position = position_dodge(width = 0.5), size = 2, shape = 1, color = 'black')+
+  coord_cartesian(ylim = c(0, 1))+
+  scale_color_manual(values = c('#3182bd', '#e6550d'))+
+  scale_fill_manual( values = c('#3182bd', '#e6550d'))+
+  facet_grid(.~target)+
+  labs(x = '', y = 'Accuracy', title = 'Out of Sample Accuracy Across Models')+
+  theme_bw()+theme(strip.text.x.top = element_text(face = 'italic'), legend.position = 'bottom', axis.text.x = element_text(angle = 45, hjust = 1))
+
+# performance
+p
+# and inset
+p+coord_cartesian(ylim = c(.8, 1))
+p+coord_cartesian(ylim = c(.9, 1))
+
+
+M_mean_acc <- M |> 
+  group_by(model, target, kmer, contig) |>
+  summarise(accuracy_tst = mean(accuracy_tst)) |>
+  ungroup()
+
+tmp <- M_mean_acc |> 
+  group_by(target) |> 
+  summarise(accuracy_tst = max(accuracy_tst)) |>
+  mutate(ismax = T) |>
+  ungroup()
+
+    
+M_mean_acc |> 
+  ggplot(aes(x = model, y = target, fill = accuracy_tst))+
+  geom_tile()+
+  geom_text(data = left_join(tmp, M_mean_acc), aes(label = round(accuracy_tst, digits = 3)))+
+  # facet_grid(target~.)+
+  scale_fill_viridis_c()+
+  labs(x = 'Model', y = 'Species', fill = 'Mean\nAccuracy', title = 'Mean Out of Sample Accuracy Across Models')+
+  theme_bw()+
+  theme(axis.text.y = element_text(face = 'italic'))
+```
+
+
+
+```{r}
+
+M <- arrow::read_parquet('../../Virus_project_files/models/prod/all__hyperparameters.parquet') |> 
+  filter(kmer == 'kmer3' & contig  == 'bpgenome') |>
+  filter(!(model %in% c('svml', 'svmr')))
+
+M <- M |>
+  mutate(kmer = str_remove(kmer, 'kmer')) |>
+  mutate(contig = case_when(str_detect(contig, 'bp\\d+') ~str_remove(contig, 'bp'),
+                            contig == 'bpgenome' ~ 'Genome')) |>
+  mutate(contig = factor(contig, levels = c("500", "1000", "3000", "5000", "10000", "Genome"  ))) |>
+  mutate(target = str_replace_all(target, '_', ' ')) |> 
+  mutate(model = str_to_upper(model)) |>
+  mutate(model = factor(model, levels = c("KNN", "BKNN", "RF", "BRF", "GNBC", "HGB")))
+
+
+# probably want an overview plot
+
+M |> 
+  select(model, target, trial_index, score) |>
+  ggplot(aes(x= trial_index, y = model, fill = score))+
+  geom_tile()+
+  facet_grid(target~.)+
+  scale_fill_viridis_c()+
+  labs(x = 'Hyperparameter Iteration', y = 'Model', fill = 'Accuracy', title = 'Peformance With Hyperparameter Optimization')+
+  theme_bw()+
+  theme(strip.text.y = element_text(face = 'italic'))
+  
+
+M |> 
+  select(model, target, trial_index, score) |>
+  ggplot(aes(x= trial_index, y = score, group = model))+
+  geom_line()+
+  geom_point()+
+  facet_grid(target~model)+
+  scale_fill_viridis_c()+
+  labs(x = 'Hyperparameter Iteration', y = 'Model', fill = 'Accuracy', title = 'Peformance With Hyperparameter Optimization')+
+  theme_bw()+
+  theme(strip.text.y = element_text(face = 'italic'))
+  
+```
+
